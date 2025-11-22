@@ -13,56 +13,9 @@
 #include "texture.hpp"
 #include "camera.hpp"
 
-constexpr int tilesX = 9;
-constexpr int tilesY = 6;
-constexpr float tileSize = 32.0f;
-constexpr float offset = 1.0f/12;
 
-float random(int a, int b) {
-	return static_cast<float>(a + rand() % (b - a + 1));
-}
-void coordSetter(float* verts, const float px, const float py,int &i, const int pos,float off) {
-	float deltaX;
-	float deltaY;
+void drawObstacle() {
 
-	if (pos ==1) {					 // bot r
-		deltaX = tileSize;
-		deltaY = 0.0f;
-	}
-	else if (pos == 2 || pos == 4) { // top r
-		deltaX = tileSize;
-		deltaY = tileSize;
-	}
-	else if (pos == 5) {			 // top l
-		deltaX = 0.0f;
-		deltaY = tileSize;
-	}
-	else {							 // bot l
-		deltaX = 0.0f;
-		deltaY = 0.0f;
-	}
-	verts[i++] = (px + deltaX)/SCR_WIDTH*6 -1.0f;
-	verts[i++] = (py + deltaY)/SCR_HEIGHT*6-1.0f;
-	verts[i++] = 0.0f;
-	verts[i++] = off + (deltaX == 0.0f ? 0.0f : offset);
-	verts[i++] = deltaY == 0.0f ? 0.0f : 1.0f;
-}
-
-void makeMap(float* vert ) {
-	int i=0;
-
-	for(int y = 0; y < tilesY; y++) {
-		for(int x = 0; x < tilesX; x++) {
-			const float px = static_cast<float>(x) * tileSize;
-			const float py = static_cast<float>(y) * tileSize;
-			float off;
-			if (x==0) off = random(0,0);
-			else if (x == tilesX - 1) off = random(1,1);
-			else if (x == tilesX/2) off = random(2,6);
-			else off = random(7,11);
-			for (int pos = 0; pos < 6; pos++) coordSetter(vert,px,py,i,pos,off*offset);
-		}
-	}
 }
 
 int main() {
@@ -70,14 +23,20 @@ int main() {
 
 	float vertices[6*tilesX*tilesY*5];
 	float vertices2[6*tilesX*tilesY*5];
-
+	float carVerts[] = {
+		0.0f,		 0.0f , 0.0f, 0.0f, 0.0f, // bl
+		0.4f*aspect, 0.0f, 0.0f, offset, 0.0f, // br
+		0.4f*aspect, 0.4f, 0.0f, offset, 1.0f, // tr
+		0.0f,		 0.4f , 0.0f, 0.0f, 1.0f  // tl
+	};
+	GLuint carIndices[6] = {0, 1, 2, 0, 3, 2};
 	makeMap(vertices);
 	makeMap(vertices2);
 
 
     Shader myShader("Glsls/vShader.glsl", "Glsls/fShader.glsl");
 
-    VAO VAO1,VAO2;
+    VAO VAO1,VAO2, carVAO;
     VAO1.Bind();
 
     VBO map1(vertices, sizeof(vertices));
@@ -91,7 +50,16 @@ int main() {
 	VAO2.LinkAttrib(map2,1,2,GL_FLOAT,5*sizeof(float),reinterpret_cast<void *>(3 * sizeof(float)));
 	map2.Unbind();
 
-    auto map_tileset = Texture("resources/test1.png",GL_TEXTURE_2D,GL_TEXTURE0,GL_UNSIGNED_BYTE,GL_REPEAT,0);
+	carVAO.Bind();
+	VBO car(carVerts,sizeof(carVerts));
+	EBO carEBO(carIndices, sizeof(carIndices));
+	carVAO.LinkAttrib(car,0,3,GL_FLOAT,5*sizeof(float),nullptr);
+	carVAO.LinkAttrib(car,1,2,GL_FLOAT,5*sizeof(float),reinterpret_cast<void *>(3 * sizeof(float)));
+	carVAO.Unbind();
+	car.Unbind();
+	carEBO.Unbind();
+
+    auto map_tileset = Texture("resources/test2.png",GL_TEXTURE_2D,GL_TEXTURE0,GL_UNSIGNED_BYTE,GL_REPEAT,0);
 	map_tileset.Bind();
 	map_tileset.texUnit(myShader, "sheet");
 
@@ -109,6 +77,8 @@ int main() {
 		if (crntTime - prevTime >= 1.0 / 60)
 		{
 			rotation -= 1.0f;
+			map1Loc -= deltaTime*0.2f;
+			map2Loc -= deltaTime*0.2f;
 			prevTime = crntTime;
 		}
 
@@ -121,28 +91,29 @@ int main() {
 		myShader.Activate();
 
 		VAO1.Bind();
-		auto model = glm::translate( glm::mat4(1.0f),glm::vec3(0.0f, map1Loc, 0.0f));
-		myShader.setMat4("model", model);
+		auto mapModel = glm::translate( glm::mat4(1.0f),glm::vec3(0.0f, map1Loc, 0.0f));
+		myShader.setMat4("model", mapModel);
 		glDrawArrays(GL_TRIANGLES, 0, 6*tilesX*tilesY);
 
 		VAO2.Bind();
-		model = glm::translate( glm::mat4(1.0f),glm::vec3(0.0f, map2Loc, 0.0f));
-		myShader.setMat4("model", model);
+		mapModel = glm::translate( glm::mat4(1.0f),glm::vec3(0.0f, map2Loc, 0.0f));
+		myShader.setMat4("model", mapModel);
 		glDrawArrays(GL_TRIANGLES, 0, 6*tilesX*tilesY);
-
-		map1Loc -= deltaTime*0.2f;
-		map2Loc -= deltaTime*0.2f;
 
 		if (map1Loc < -2) {
 			makeMap(vertices);
 			map1.changeArray(vertices);
-			map1Loc = 1.99;
+			map1Loc += 4.0f;
 		}
 		if (map2Loc < -2) {
 			makeMap(vertices2);
 			map2.changeArray(vertices2);
-			map2Loc = 1.99;
+			map2Loc += 4.0f;
 		}
+		auto model = glm::translate( glm::mat4(1.0f),glm::vec3(carXOffset, carYOffset, 0.0f));
+		carVAO.Bind();
+		myShader.setMat4("model", model);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
