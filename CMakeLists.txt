@@ -22,6 +22,10 @@ add_executable(2d-grafika-projekat
         Cpp/texture.cpp
         Cpp/camera.cpp
         Cpp/stb_image.cpp
+        Headers/object.hpp
+        Headers/object.hpp
+        Cpp/object.cpp
+        Cpp/object.cpp
 )
 
 # ---- Include directories ----
