@@ -24,18 +24,25 @@ extern constexpr float aspect = 6.0f/9.0f;
 extern constexpr int tilesX = 9;
 extern constexpr int tilesY = 6;
 extern constexpr float tileSize = 32.0f;
-extern constexpr float offset = 1.0f/15;
+extern constexpr float offset = 1.0f/17;
 extern Shader* myShader;
 extern object* car;
 extern std::vector<object*> pickups;
+extern std::vector<object*> dangers;
 extern float potionFactor;
 extern double prevPotion;
 extern double prevPecurka;
+extern double prevRaketa;
 extern bool pecurkaActive;
+extern bool blur;
 extern glm::vec4 filt1;
 extern glm::vec4 filt2;
 extern glm::vec4 filt3;
 extern glm::vec4 filt4;
+extern float k;
+extern float alfa;
+extern GLuint framebuffer;
+extern GLuint screenTex;
 struct particle_t
 {
     float x, y, dx, dy,life;

@@ -3,7 +3,7 @@
 #include "glm/ext/matrix_transform.hpp"
 #include "helper.hpp"
 
-object::object(const char* id, const float xOff, const float yOff, const float* vertices, GLuint* indices, const GLsizeiptr vertSize, const GLsizeiptr indSize) {
+object::object(const char* id, const float xOff, const float yOff, const float* vertices, GLuint* indices, const GLsizeiptr vertSize, const GLsizeiptr indSize,const float fall) {
     ime = id;
     this->xOff = xOff;
     this->yOff = yOff;
@@ -16,23 +16,23 @@ object::object(const char* id, const float xOff, const float yOff, const float* 
     this->vao->Unbind();
     this->vbo->Unbind();
     this->ebo->Unbind();
+    this->fall = fall;
 }
-
-void object::draw(const float x) {
+void object::draw() {
     if (this->ime != "auto") {
-        this->yOff-= x;
-        this->hitbox.y-=x;
+        this->yOff -= fall;
+        this->hitbox.y -= fall;
         if (this->yOff < -1.5f) {
+            if (this->ime != "raketa") pickups.erase(std::remove(pickups.begin(), pickups.end(), this), pickups.end());
+            else dangers.erase(std::remove(dangers.begin(), dangers.end(), this), dangers.end());
             delete this;
-            pickups.erase(std::remove(pickups.begin(), pickups.end(), this), pickups.end());
-
+            return;
         }
     }
     this->vao->Bind();
-    const auto model = glm::translate(glm::mat4(1.0f),glm::vec3(this->xOff, this->yOff, 0.0f));
+    const auto model = glm::translate(glm::mat4(1.0f), glm::vec3(this->xOff, this->yOff, 0.0f));
     myShader->setMat4("model", model);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-
 }
 
 void object::setHitbox(const float x, const float y, const float w, const float h) {

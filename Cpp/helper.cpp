@@ -19,14 +19,21 @@ float lastFrame = 0.0f;
 object* car = nullptr;
 Shader* myShader = nullptr;
 std::vector<object*> pickups;
+std::vector<object*> dangers;
 float potionFactor = 1.0f;
 double prevPecurka;
 double prevPotion;
+double prevRaketa;
 bool pecurkaActive=false;
+bool blur=false;
 glm::vec4 filt1;
 glm::vec4 filt2;
 glm::vec4 filt3;
 glm::vec4 filt4;
+float k=70.0f;
+float alfa = 0.0f;
+GLuint framebuffer;
+GLuint screenTex;
 
 void processInput(GLFWwindow *win)
 {
@@ -80,9 +87,8 @@ void processInput(GLFWwindow *win)
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
             testVAO.Unbind();
         }
+        myShader->Activate();
     }
-
-
 }
 
 void framebuffer_size_callback(GLFWwindow* win, const int width,const int height)
@@ -142,6 +148,17 @@ int windowinit(const int width, const int height, const char* title)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_PROGRAM_POINT_SIZE);
 
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    glGenTextures(1, &screenTex);
+    glBindTexture(GL_TEXTURE_2D, screenTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screenTex, 0);
     return 0;
 }
 
@@ -186,10 +203,10 @@ void makeMap(float* vert) {
             const float px = static_cast<float>(x) * tileSize;
             const float py = static_cast<float>(y) * tileSize;
             float off;
-            if (x==0) off = random(3,3);
-            else if (x == tilesX - 1) off = random(4,4);
-            else if (x == tilesX/2) off = random(5,9);
-            else off = random(10,14);
+            if (x==0) off = random(4,4);
+            else if (x == tilesX - 1) off = random(5,5);
+            else if (x == tilesX/2) off = random(6,10);
+            else off = random(11,15);
             for (int pos = 0; pos < 6; pos++) coordSetter(vert,px,py,i,pos,off*offset);
         }
     }
@@ -242,7 +259,8 @@ void handleCollision(const std::string& ime) {
     if (ime == "pecurka") {
         pecurkaActive = true;
         prevPecurka = glfwGetTime();
-        myShader->setFloat("alfa",0.5f);
+        alfa = random(50,100)/100;
+        myShader->setFloat("alfa",alfa);
         const std::vector<float> hsl = randomSaturatedColor();
         filt1 = HSVtoRGB(hsl[0]);
         filt2 = HSVtoRGB(hsl[1]);
@@ -253,18 +271,32 @@ void handleCollision(const std::string& ime) {
         prevPotion = glfwGetTime();
         potionFactor = -1.0f;
     }
+    else if (ime == "raketa") std::cout << "asd" << std::endl;
+    else if (ime == "nasilje") {
+        blur = true;
+        k = 70.0f;
+    }
 }
 
 void checkCollisions() {
     hitbox box1 = car->hitbox;
-    for (object* obj : pickups) {
-        hitbox box2 = obj->hitbox;
-        if ((box1.x<box2.x+box2.w && box1.x + box1.w > box2.x)&&
-            (box1.y < box2.y + box2.h &&box1.y + box1.h > box2.y)) {
-                handleCollision(obj->ime);
-                delete obj;
-                pickups.erase(std::remove(pickups.begin(), pickups.end(), obj), pickups.end());
-            }
+    for (auto it = pickups.begin(); it != pickups.end(); ) {
+        hitbox box2 = (*it)->hitbox;
+        if ((box1.x < box2.x + box2.w && box1.x + box1.w > box2.x) &&
+            (box1.y < box2.y + box2.h && box1.y + box1.h > box2.y)) {
+                handleCollision((*it)->ime);
+                delete *it;
+                it = pickups.erase(it);
+            } else ++it;
+    }
+    for (auto it = dangers.begin(); it != dangers.end(); ) {
+        hitbox box2 = (*it)->hitbox;
+        if ((box1.x < box2.x + box2.w && box1.x + box1.w > box2.x) &&
+            (box1.y < box2.y + box2.h && box1.y + box1.h > box2.y)) {
+                handleCollision((*it)->ime);
+                delete *it;
+                it = dangers.erase(it);
+            } else ++it;
     }
 }
 

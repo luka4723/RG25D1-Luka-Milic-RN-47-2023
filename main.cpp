@@ -28,7 +28,25 @@ int main() {
 	float texpos = 0;
 	GLuint carIndices[6] = {0, 1, 2, 0, 3, 2};
 	myShader = new Shader("Glsls/vShader.glsl", "Glsls/fShader.glsl");
-	Shader smokeShader("Glsls/smokeVshader.glsl", "Glsls/smokeFshader.glsl");
+	Shader blurShader("Glsls/blurVShader.glsl", "Glsls/blurFShader.glsl");
+	Shader smokeShader("Glsls/smokeVShader.glsl", "Glsls/smokeFShader.glsl");
+
+	float quadVerts[] ={
+		-1.0f,  1.0f, 0.0f, 1.0f,
+		-1.0f, -1.0f, 0.0f, 0.0f,
+		 1.0f, -1.0f, 1.0f, 0.0f,
+
+		-1.0f,  1.0f, 0.0f, 1.0f,
+		 1.0f, -1.0f, 1.0f, 0.0f,
+		 1.0f,  1.0f, 1.0f, 1.0f,
+	};
+
+	VAO quadVAO;
+	quadVAO.Bind();
+	VBO quadVBO(quadVerts,sizeof(quadVerts));
+	quadVAO.LinkAttrib(quadVBO,0,2,GL_FLOAT,4*sizeof(float),nullptr);
+	quadVAO.LinkAttrib(quadVBO,1,2,GL_FLOAT,4*sizeof(float),reinterpret_cast<void *>(2 * sizeof(float)));
+	quadVAO.Unbind();
 
 	makeMap(vertices);
 	makeMap(vertices2);
@@ -48,7 +66,7 @@ int main() {
 	map2.Unbind();
 
 	std::array<float, 20> verts = makeArray(object_sizex, object_sizey, texpos);
-	car = new object("auto",-0.2f*aspect,-0.8f,verts.data(),carIndices,sizeof(float)*verts.size(),sizeof(carIndices));
+	car = new object("auto",-0.2f*aspect,-0.8f,verts.data(),carIndices,sizeof(float)*verts.size(),sizeof(carIndices),0);
 	car->setHitbox(car->xOff+0.06f,car->yOff,0.22f*aspect,0.405f);
 
 	for (auto & particle : particles) respawnParticle(particle);
@@ -66,11 +84,19 @@ int main() {
 
 	double prevEvent = glfwGetTime();
 	double spawnInterval = random(3,3);
+	double rocketInterval = random(3,10);
 
 	double map1Loc=0,map2Loc=2;
 
+	blurShader.Activate();
+	blurShader.setInt("screenTexture", 0);
+
+
+	float w =0.0f,h=0.0f;
 	while (!glfwWindowShouldClose(window))
 	{
+
+
 		const auto currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
@@ -83,18 +109,44 @@ int main() {
 		{
 			object_sizex = 0.27f;
 			object_sizey = 0.27f;
-			texpos=random(1,2);
+			texpos=random(1,3);
 			const char* ime = nullptr;
 			if (texpos == 1) ime = "pecurka";
 			else if (texpos == 2) ime = "potion";
+			else if (texpos == 3) ime = "nasilje";
 			verts = makeArray(object_sizex, object_sizey, texpos);
-			auto* obj = new object(ime, -0.83f+random(0,148)/100,1.0f, verts.data(), carIndices, sizeof(float)*verts.size(),sizeof(carIndices));
-			obj->setHitbox(obj->xOff+0.03f,obj->yOff+0.01f,0.19f*aspect,0.2f);
+			auto* obj = new object(ime, -0.83f+random(0,148)/100,1.0f, verts.data(), carIndices, sizeof(float)*verts.size(),sizeof(carIndices),0.2f*deltaTime);
+			float hb_x = obj->xOff+0.03f;
+			float hb_y = obj->yOff+0.01f;
+			float hb_w = 0.19f*aspect;
+			float hb_h = 0.2f;
+			if (texpos == 3) {
+				hb_x = obj->xOff+0.06f;
+				hb_y = obj->yOff+0.01f;
+				hb_w = 0.1f*aspect;
+				hb_h = 0.2f;
+			}
+			obj->setHitbox(hb_x,hb_y,hb_w,hb_h);
 			pickups.push_back(obj);
 			spawnInterval = random(3,3);
 			prevEvent = crntTime;
 		}
-		if (crntTime - prevPecurka >= 5.0f) {
+		/*if (crntTime - prevRaketa >= rocketInterval) {
+			float cnt = random(3,7);
+			for (int i = 0;i<cnt;i++) {
+				object_sizex = 0.35f;
+				object_sizey = 0.35f;
+				//texpos=random(1,2);
+				const char* ime = nullptr;
+				verts = makeArray(object_sizex, object_sizey, random(15,15));
+				auto* obj = new object("raketa", -0.9+random(1,157)/100,1.0f, verts.data(), carIndices, sizeof(float)*verts.size(),sizeof(carIndices),0.5f*deltaTime);
+				obj->setHitbox(obj->xOff+0.095f,obj->yOff,0.07f*aspect,0.23f);
+				dangers.push_back(obj);
+			}
+			rocketInterval = random(3,10);
+			prevRaketa = crntTime;
+		}*/
+		if (alfa < 0) {
 			pecurkaActive = false;
 			prevPecurka = crntTime;
 			myShader->setFloat("alfa",0.0f);
@@ -106,7 +158,11 @@ int main() {
 
 		processInput(window);
 
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 		glClear(GL_COLOR_BUFFER_BIT);
+
+		myShader->Activate();
+		map_tileset.Bind();
 
 		map1Loc -= 0.2f*deltaTime;
 		map2Loc -= 0.2f*deltaTime;
@@ -132,8 +188,9 @@ int main() {
 			map2Loc += 4.0f;
 		}
 
-		car->draw(1);
-		for (object* obj : pickups) obj->draw(0.2f*deltaTime);
+		car->draw();
+		for (object* obj : pickups) obj->draw();
+		//for (object* obj : dangers) obj->draw();
 		checkCollisions();
 
 		for (auto & p : particles) {
@@ -145,18 +202,19 @@ int main() {
 		}
 
 		smokeShader.Activate();
+		if (pecurkaActive) {
+			smokeShader.setVec3("col",
+				glm::sin(static_cast<float>(crntTime)*2.0f) * 0.5f + 0.5f,
+				glm::sin(static_cast<float>(crntTime)*2.0f+ 2.094f) * 0.5f + 0.5f,
+				glm::sin(static_cast<float>(crntTime)*2.0f+ 4.188f) * 0.5f + 0.5f);
+		}
+		else smokeShader.setVec3("col",0.1,0.1,0.1);
 		dots.Bind();
 		dotVBO.changeArray(particles,MAX_PARTICLES * sizeof(particle_t));
 		glDrawArrays(GL_POINTS, 0, MAX_PARTICLES);
 		myShader->Activate();
 
 		if (pecurkaActive) {
-			smokeShader.Activate();
-			smokeShader.setVec3("col",
-				glm::sin(static_cast<float>(crntTime)*2.0f) * 0.5f + 0.5f,
-				glm::sin(static_cast<float>(crntTime)*2.0f+ 2.094f) * 0.5f + 0.5f,
-				glm::sin(static_cast<float>(crntTime)*2.0f+ 4.188f) * 0.5f + 0.5f);
-			myShader->Activate();
 			const float t = static_cast<float>(crntTime) * 1.5f;
 
 			/*filt1.r += (glm::sin(random(1,5)*t)) * 0.005f;
@@ -186,7 +244,22 @@ int main() {
 			myShader->setVec4("filterColor4", filt4);
 		}
 
-
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		if (blur) {
+			const auto r = static_cast<float>(1.5f * glfwGetTime());
+			h = cos(r);
+			w = sin(r);
+			k-=10.0f*deltaTime;
+			if (k<0) blur = false;
+		}
+		blurShader.Activate();
+		blurShader.setVec2("vec",w*k,h*k);
+		quadVAO.Bind();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, screenTex);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

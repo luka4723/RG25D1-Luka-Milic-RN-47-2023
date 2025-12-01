@@ -17,11 +17,12 @@ class object {
         float xOff;
         float yOff;
         hitbox hitbox{};
-        object(const char *id, float xOff, float yOff, const float *vertices, GLuint *indices, GLsizeiptr vertSize,GLsizeiptr indSize);
+        float fall;
+        object(const char *id, float xOff, float yOff, const float *vertices, GLuint *indices, GLsizeiptr vertSize,GLsizeiptr indSize, float fall);
 
         void setHitbox(float x, float y, float w, float h);
 
-        void draw(float x);
+        void draw();
 };
 
 
