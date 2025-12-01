@@ -154,11 +154,6 @@ int main() {
 			smokeShader.setVec3("col",0.1,0.1,0.1);
 			myShader->Activate();
 		}
-		else {
-			alfa -= 0.08f*deltaTime;
-			myShader->setFloat("alfa",alfa);
-
-		}
 		if  (crntTime - prevPotion >= 5.0f) potionFactor = 1.0f;
 
 		processInput(window);
