@@ -24,7 +24,7 @@ extern constexpr float aspect = 6.0f/9.0f;
 extern constexpr int tilesX = 9;
 extern constexpr int tilesY = 6;
 extern constexpr float tileSize = 32.0f;
-extern constexpr float offset = 1.0f/17;
+extern constexpr float offset = 1.0f/18;
 extern Shader* myShader;
 extern Shader* screenShader;
 extern object* car;
@@ -36,7 +36,9 @@ extern double prevPecurka;
 extern double prevRaketa;
 extern double prevEvent;
 extern double prevSpeed;
+extern double prevMud;
 extern bool pecurkaActive;
+extern bool mudActive;
 extern bool blur;
 extern glm::vec4 filt1;
 extern glm::vec4 filt2;
@@ -47,6 +49,8 @@ extern float alfa;
 extern GLuint framebuffer;
 extern GLuint screenTex;
 extern float pause;
+extern int mudCnt;
+extern std::vector<glm::vec3> mudPos;
 struct particle_t
 {
     float x, y, dx, dy,life;

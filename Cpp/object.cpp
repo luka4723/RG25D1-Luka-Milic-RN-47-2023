@@ -23,8 +23,8 @@ void object::draw() {
         this->yOff -= fall;
         this->hitbox.y -= fall;
         if (this->yOff < -1.5f) {
-            if (this->ime != "raketa") pickups.erase(std::remove(pickups.begin(), pickups.end(), this), pickups.end());
-            else dangers.erase(std::remove(dangers.begin(), dangers.end(), this), dangers.end());
+            if (this->ime == "raketa" || this->ime == "mud") dangers.erase(std::remove(dangers.begin(), dangers.end(), this), dangers.end());
+            else pickups.erase(std::remove(pickups.begin(), pickups.end(), this), pickups.end());
             delete this;
             return;
         }

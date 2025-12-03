@@ -26,8 +26,10 @@ double prevPecurka;
 double prevPotion;
 double prevEvent = 0;
 double prevSpeed = 0;
-double prevRaketa;
+double prevMud=0;
+double prevRaketa=0;
 bool pecurkaActive=false;
+bool mudActive=false;
 bool blur=false;
 glm::vec4 filt1;
 glm::vec4 filt2;
@@ -41,6 +43,8 @@ float pause = 0;
 double pauseTime;
 int rotation = 0;
 bool lastKeys[2] = { false };
+int mudCnt;
+std::vector<glm::vec3> mudPos;
 
 void processInput(GLFWwindow *win)
 {
@@ -59,13 +63,13 @@ void processInput(GLFWwindow *win)
             }
         if (glfwGetKey(win, GLFW_KEY_A) == GLFW_PRESS)
             if ((car->xOff > -0.95f + 1.0/13 && potionFactor==1.0f) || (car->xOff <  0.95f - 1.0/13 - 0.4*aspect && potionFactor == -1.0f)) {
-                car->xOff-= 0.01f*aspect*potionFactor;
-                car->hitbox.x -= 0.01f*aspect*potionFactor;
+                car->xOff-= 0.01f*aspect*potionFactor*(rotation==1 || rotation == 2?-1.0f:1.0f);
+                car->hitbox.x -= 0.01f*aspect*potionFactor*(rotation==1 || rotation == 2?-1.0f:1.0f);
             }
         if (glfwGetKey(win, GLFW_KEY_D) == GLFW_PRESS)
             if ((car->xOff <  0.95f - 1.0/13 - 0.4*aspect && potionFactor==1.0f) || (car->xOff > -0.95f + 1.0/13 && potionFactor == -1.0f)) {
-                car->xOff+= 0.01f*aspect*potionFactor;
-                car->hitbox.x+=0.01f*aspect*potionFactor;
+                car->xOff+= 0.01f*aspect*potionFactor*(rotation==1 || rotation == 2?-1.0f:1.0f);
+                car->hitbox.x+=0.01f*aspect*potionFactor*(rotation==1 || rotation == 2?-1.0f:1.0f);
             }
     }
     if (glfwGetKey(win, GLFW_KEY_P) == GLFW_PRESS && !lastKeys[0]) {
@@ -75,6 +79,7 @@ void processInput(GLFWwindow *win)
             prevRaketa += glfwGetTime() - pauseTime;
             prevPotion += glfwGetTime() - pauseTime;
             prevSpeed  += glfwGetTime() - pauseTime;
+            prevMud    += glfwGetTime() - pauseTime;
         }
         else {
             pause = 1;
@@ -86,7 +91,6 @@ void processInput(GLFWwindow *win)
     if (glfwGetKey(win, GLFW_KEY_R) == GLFW_PRESS && !lastKeys[1]) {
         rotation++;
         rotation = rotation %4;
-        std::cout << rotation << std::endl;
         screenShader->Activate();
         screenShader->setInt("rotation", rotation);
     }
@@ -170,7 +174,7 @@ int windowinit(const int width, const int height, const char* title)
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
     {
@@ -179,6 +183,7 @@ int windowinit(const int width, const int height, const char* title)
         return -1;
     }
     glEnable(GL_BLEND);
+    glDisable(GL_DEPTH_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_PROGRAM_POINT_SIZE);
 
@@ -193,6 +198,11 @@ int windowinit(const int width, const int height, const char* title)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screenTex, 0);
+    unsigned int rbo;
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, SCR_WIDTH, SCR_HEIGHT);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
     return 0;
 }
 
@@ -306,9 +316,17 @@ void handleCollision(const std::string& ime) {
         potionFactor = -1.0f;
     }
     else if (ime == "raketa") std::cout << "asd" << std::endl;
-    else if (ime == "nasilje") {
+    else if (ime == "vinjak") {
         blur = true;
         k = 70.0f;
+    }
+    else if (ime == "mud") {
+        mudActive = true;
+        mudCnt = static_cast<int>(random(10, 40));
+        for (int i=0;i<mudCnt;i++) {
+            mudPos.emplace_back(random(-100,100)/100,random(-100,100)/100,0);
+        }
+        prevMud = glfwGetTime();
     }
 }
 
