@@ -3,7 +3,7 @@
 #include "glm/ext/matrix_transform.hpp"
 #include "helper.hpp"
 
-object::object(const char* id, const float xOff, const float yOff, const float* vertices, GLuint* indices, const GLsizeiptr vertSize, const GLsizeiptr indSize,const float fall) {
+object::object(const char* id, const float xOff, const float yOff, const float* vertices, const GLuint* indices, const GLsizeiptr vertSize, const GLsizeiptr indSize,const float fall) {
     ime = id;
     this->xOff = xOff;
     this->yOff = yOff;
@@ -11,11 +11,11 @@ object::object(const char* id, const float xOff, const float yOff, const float* 
     this->vao->Bind();
     this->vbo = new VBO(vertices, vertSize);
     this->ebo = new EBO(indices, indSize);
-    this->vao->LinkAttrib(*this->vbo, 0, 3, GL_FLOAT, 5 * sizeof(float), nullptr);
-    this->vao->LinkAttrib(*this->vbo, 1, 2, GL_FLOAT, 5 * sizeof(float),reinterpret_cast<void*>(3 * sizeof(float)));
-    this->vao->Unbind();
-    this->vbo->Unbind();
-    this->ebo->Unbind();
+    VAO::LinkAttrib(*this->vbo, 0, 3, GL_FLOAT, 5 * sizeof(float), nullptr);
+    VAO::LinkAttrib(*this->vbo, 1, 2, GL_FLOAT, 5 * sizeof(float),reinterpret_cast<void*>(3 * sizeof(float)));
+    VAO::Unbind();
+    VBO::Unbind();
+    EBO::Unbind();
     this->fall = fall;
 }
 void object::draw() {

@@ -31,7 +31,6 @@ extern std::vector<object*> pickups;
 extern std::vector<object*> dangers;
 extern float potionFactor;
 extern double prevPotion;
-extern double prevPecurka;
 extern double prevRaketa;
 extern double prevEvent;
 extern double prevSpeed;

@@ -21,7 +21,6 @@ Shader* screenShader = nullptr;
 std::vector<object*> pickups;
 std::vector<object*> dangers;
 float potionFactor = 1.0f;
-double prevPecurka;
 double prevPotion;
 double prevEvent = 0;
 double prevSpeed = 0;
@@ -58,13 +57,13 @@ void processInput(GLFWwindow *win)
             }
         if (glfwGetKey(win, GLFW_KEY_A) == GLFW_PRESS)
             if ((car->xOff > -0.95f + 1.0/13 && potionFactor==1.0f) || (car->xOff <  0.95f - 1.0/13 - 0.4*aspect && potionFactor == -1.0f)) {
-                car->xOff-= 0.01f*aspect*potionFactor*(rotation==1 || rotation == 2?-1.0f:1.0f);
-                car->hitbox.x -= 0.01f*aspect*potionFactor*(rotation==1 || rotation == 2?-1.0f:1.0f);
+                car->xOff-= 0.01f*aspect*potionFactor;
+                car->hitbox.x -= 0.01f*aspect*potionFactor;
             }
         if (glfwGetKey(win, GLFW_KEY_D) == GLFW_PRESS)
             if ((car->xOff <  0.95f - 1.0/13 - 0.4*aspect && potionFactor==1.0f) || (car->xOff > -0.95f + 1.0/13 && potionFactor == -1.0f)) {
-                car->xOff+= 0.01f*aspect*potionFactor*(rotation==1 || rotation == 2?-1.0f:1.0f);
-                car->hitbox.x+=0.01f*aspect*potionFactor*(rotation==1 || rotation == 2?-1.0f:1.0f);
+                car->xOff+= 0.01f*aspect*potionFactor;
+                car->hitbox.x+=0.01f*aspect*potionFactor;
             }
     }
     if (glfwGetKey(win, GLFW_KEY_P) == GLFW_PRESS && !lastKeys[0]) {
@@ -263,7 +262,6 @@ glm::vec4 HSVtoRGB(const float h) {
     return {r, g, b,1};
 }
 
-
 std::vector<float> randomSaturatedColor() {
     std::vector<float> res{};
     res.reserve(4);
@@ -276,7 +274,6 @@ std::vector<float> randomSaturatedColor() {
 void handleCollision(const std::string& ime) {
     if (ime == "pecurka") {
         pecurkaActive = true;
-        prevPecurka = glfwGetTime();
         alfa = random(50,100)/100;
         myShader->setFloat("alfa",alfa);
         const std::vector<float> hsl = randomSaturatedColor();

@@ -21,13 +21,13 @@ int main() {
 	float object_sizex = 0.4f;
 	float object_sizey = 0.4f;
 	float texpos = 0;
-	GLuint carIndices[6] = {0, 1, 2, 0, 3, 2};
+	const GLuint carIndices[6] = {0, 1, 2, 0, 3, 2};
 	myShader = new Shader("Glsls/vShader.glsl", "Glsls/fShader.glsl");
 	screenShader = new Shader("Glsls/blurVShader.glsl", "Glsls/blurFShader.glsl");
-	Shader smokeShader("Glsls/smokeVShader.glsl", "Glsls/smokeFShader.glsl");
-	Shader stencilShader("Glsls/stencilVShader.glsl", "Glsls/stencilFShader.glsl");
+	const Shader smokeShader("Glsls/smokeVShader.glsl", "Glsls/smokeFShader.glsl");
+	const Shader stencilShader("Glsls/stencilVShader.glsl", "Glsls/stencilFShader.glsl");
 
-	float quadVerts[] ={
+	float screenVerts[] ={
 		-1.0f,  1.0f, 0.0f, 1.0f,
 		-1.0f, -1.0f, 0.0f, 0.0f,
 		 1.0f, -1.0f, 1.0f, 0.0f,
@@ -70,36 +70,36 @@ int main() {
 		0.018274f * aspect,  0.052500f,
 		0.070000f * aspect,  0.000000f
 	};
-	VAO quadVAO;
-	quadVAO.Bind();
-	VBO quadVBO(quadVerts,sizeof(quadVerts));
-	quadVAO.LinkAttrib(quadVBO,0,2,GL_FLOAT,4*sizeof(float),nullptr);
-	quadVAO.LinkAttrib(quadVBO,1,2,GL_FLOAT,4*sizeof(float),reinterpret_cast<void *>(2 * sizeof(float)));
-	quadVAO.Unbind();
+	const VAO screennVAO;
+	screennVAO.Bind();
+	const VBO quadVBO(screenVerts,sizeof(screenVerts));
+	VAO::LinkAttrib(quadVBO,0,2,GL_FLOAT,4*sizeof(float),nullptr);
+	VAO::LinkAttrib(quadVBO,1,2,GL_FLOAT,4*sizeof(float),reinterpret_cast<void *>(2 * sizeof(float)));
+	VAO::Unbind();
 
-	VAO stencilVAO;
+	const VAO stencilVAO;
 	stencilVAO.Bind();
-	VBO stencilVBO(circleVerts,sizeof(circleVerts));
-	stencilVAO.LinkAttrib(stencilVBO,0,2,GL_FLOAT,2*sizeof(float),nullptr);
-	stencilVAO.Unbind();
+	const VBO stencilVBO(circleVerts,sizeof(circleVerts));
+	VAO::LinkAttrib(stencilVBO,0,2,GL_FLOAT,2*sizeof(float),nullptr);
+	VAO::Unbind();
 
 	makeMap(vertices);
 	makeMap(vertices2);
 
 	const VAO VAO1;
     const VAO VAO2;
-    VAO1.Bind();
 
+    VAO1.Bind();
     const VBO map1(vertices, sizeof(vertices));
-    VAO1.LinkAttrib(map1,0,3,GL_FLOAT,5*sizeof(float),nullptr);
-    VAO1.LinkAttrib(map1,1,2,GL_FLOAT,5*sizeof(float),reinterpret_cast<void *>(3 * sizeof(float)));
-	map1.Unbind();
+    VAO::LinkAttrib(map1,0,3,GL_FLOAT,5*sizeof(float),nullptr);
+    VAO::LinkAttrib(map1,1,2,GL_FLOAT,5*sizeof(float),reinterpret_cast<void *>(3 * sizeof(float)));
+	VBO::Unbind();
 
 	VAO2.Bind();
 	const VBO map2(vertices2, sizeof(vertices2));
-	VAO2.LinkAttrib(map2,0,3,GL_FLOAT,5*sizeof(float),nullptr);
-	VAO2.LinkAttrib(map2,1,2,GL_FLOAT,5*sizeof(float),reinterpret_cast<void *>(3 * sizeof(float)));
-	map2.Unbind();
+	VAO::LinkAttrib(map2,0,3,GL_FLOAT,5*sizeof(float),nullptr);
+	VAO::LinkAttrib(map2,1,2,GL_FLOAT,5*sizeof(float),reinterpret_cast<void *>(3 * sizeof(float)));
+	VBO::Unbind();
 
 	std::array<float, 20> verts = makeArray(object_sizex, object_sizey, texpos);
 	car = new object("auto",-0.2f*aspect,-0.8f,verts.data(),carIndices,sizeof(float)*verts.size(),sizeof(carIndices),0);
@@ -109,8 +109,8 @@ int main() {
 	const VAO dots;
 	dots.Bind();
 	const VBO dotVBO(particles,sizeof(particles));
-	dots.LinkAttrib(dotVBO,0,2,GL_FLOAT,sizeof(particle_t),nullptr);
-	dots.Unbind();
+	VAO::LinkAttrib(dotVBO,0,2,GL_FLOAT,sizeof(particle_t),nullptr);
+	VAO::Unbind();
 	smokeShader.setVec2("cent",glm::vec2((car->hitbox.x+0.037f+car->hitbox.x+0.037f+0.075f)/2,car->yOff));
 	smokeShader.setVec3("col",0.1,0.1,0.1);
 
@@ -122,9 +122,6 @@ int main() {
 	//double rocketInterval = random(3,10);
 
 	double map1Loc=0,map2Loc=2;
-
-	screenShader->Activate();
-	screenShader->setInt("screenTexture", 0);
 
 	float speedMult = 1.0f;
 	double blurTime=0;
@@ -138,8 +135,6 @@ int main() {
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		const double crntTime = glfwGetTime();
-
 		if (pause == 0) {
 			glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 			glClear(GL_COLOR_BUFFER_BIT);
@@ -148,7 +143,7 @@ int main() {
 			smokeShader.Activate();
 			smokeShader.setVec2("cent",glm::vec2((car->hitbox.x+0.037f+car->hitbox.x+0.037f+0.075f)/2,car->yOff));
 			myShader->Activate();
-			if (crntTime - prevEvent >= spawnInterval)
+			if (currentFrame - prevEvent >= spawnInterval)
 			{
 				object_sizex = 0.27f;
 				object_sizey = 0.27f;
@@ -183,7 +178,7 @@ int main() {
 				if (texpos == 16) dangers.push_back(obj);
 				else pickups.push_back(obj);
 				spawnInterval = random(3,10);
-				prevEvent = crntTime;
+				prevEvent = currentFrame;
 			}
 			/*if (crntTime - prevRaketa >= rocketInterval) {
 				float cnt = random(3,7);
@@ -200,29 +195,28 @@ int main() {
 				rocketInterval = random(3,10);
 				prevRaketa = crntTime;
 			} */
-			if (alfa < 0) {
+			if (alfa < 0 && pecurkaActive==true) {
 				pecurkaActive = false;
-				prevPecurka = crntTime;
 				myShader->setFloat("alfa",0.0f);
 				smokeShader.Activate();
 				smokeShader.setVec3("col",0.1,0.1,0.1);
 				myShader->Activate();
 			}
-			else {
+			else if (pecurkaActive==true) {
 				alfa -= 0.08f*deltaTime;
 				myShader->setFloat("alfa",alfa);
 			}
-			if (crntTime - prevPotion >= 5.0f) potionFactor = 1.0f;
-			if (crntTime - prevSpeed >= 10.0f) {
+			if (currentFrame - prevPotion >= 5.0f) potionFactor = 1.0f;
+			if (currentFrame - prevSpeed >= 10.0f) {
 				speedMult+=0.2f;
 				for (object* obj : pickups) obj->fall = 0.2f*deltaTime*speedMult;
 				for (object* obj : dangers) {
 					if (obj->ime == "raketa") obj->fall = 0.5f*deltaTime*speedMult;
 					else obj->fall = 0.2f*deltaTime*speedMult;
 				}
-				prevSpeed = crntTime;
+				prevSpeed = currentFrame;
 			}
-			if (crntTime - prevMud >= 5.0f) {
+			if (currentFrame - prevMud >= 5.0f) {
 				mudActive = false;
 				mudPos.clear();
 			}
@@ -291,9 +285,9 @@ int main() {
 			smokeShader.Activate();
 			if (pecurkaActive) {
 				smokeShader.setVec3("col",
-					glm::sin(static_cast<float>(crntTime)*2.0f) * 0.5f + 0.5f,
-					glm::sin(static_cast<float>(crntTime)*2.0f+ 2.094f) * 0.5f + 0.5f,
-					glm::sin(static_cast<float>(crntTime)*2.0f+ 4.188f) * 0.5f + 0.5f);
+					glm::sin(currentFrame*2.0f) * 0.5f + 0.5f,
+					glm::sin(currentFrame*2.0f+ 2.094f) * 0.5f + 0.5f,
+					glm::sin(currentFrame*2.0f+ 4.188f) * 0.5f + 0.5f);
 			}
 			else smokeShader.setVec3("col",0.1,0.1,0.1);
 			dots.Bind();
@@ -310,20 +304,33 @@ int main() {
 			k-=10.0f*deltaTime;
 			if (k<0) blur = false;
 		}
-		//glDisable(GL_STENCIL_TEST);
 		screenShader->Activate();
 		screenShader->setVec2("vec",w*k,h*k);
-		quadVAO.Bind();
+		screennVAO.Bind();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, screenTex);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+
+	delete car;
+	delete myShader;
+	delete screenShader;
+
 	VAO1.Delete();
     map1.Delete();
+	VAO2.Delete();
+	map2.Delete();
     myShader->Delete();
+	screenShader->Delete();
+	smokeShader.Delete();
+	stencilShader.Delete();
     map_tileset.Delete();
+	screennVAO.Delete();
+	stencilVAO.Delete();
+	stencilVBO.Delete();
+	quadVBO.Delete();
 
     return 0;
 }

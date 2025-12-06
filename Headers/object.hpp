@@ -18,7 +18,7 @@ class object {
         float yOff;
         hitbox hitbox{};
         float fall;
-        object(const char *id, float xOff, float yOff, const float *vertices, GLuint *indices, GLsizeiptr vertSize,GLsizeiptr indSize, float fall);
+        object(const char *id, float xOff, float yOff, const float *vertices, const GLuint *indices, GLsizeiptr vertSize,GLsizeiptr indSize, float fall);
 
         void setHitbox(float x, float y, float w, float h);
 
