@@ -16,6 +16,7 @@ Funkcionalnosti:
   Na R se rotira ekran.
   na ESC se izlazi iz igre
   Ulica se generiše biranjem nasumičnih tile-ova
+  Brzina kretanja se postepeno povecava
 ```
   [snimak](domaci1-demo.mp4)
 
